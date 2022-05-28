@@ -20,49 +20,20 @@ public class UsersController : ControllerBase
     [HttpGet("{id:length(24)}")]
     public async Task<ActionResult<User>> Get(string id)
     {
+        Console.WriteLine(id);
         var user = await _usersService.GetAsync(id);
 
         if (user is null)
         {
             return NotFound();
         }
-
         return user;
-    }
-
-    [HttpGet("{id:length(24)}/Words")]
-    public async Task<ActionResult<List<Word>>> GetWords(string id)
-    {
-        var words = await _usersService.GetWordsAsync(id);
-
-        if (words is null)
-        {
-            return NotFound();
-        }
-
-        return words;
-    }
-
-    [HttpGet("{id:length(24)}/Words/{Limit}")]
-    public async Task<ActionResult<List<Word>>> GetLimitedWords(string id, int Limit)
-    {
-        List<Word> words = await _usersService.GetWordsAsync(id);
-
-        if (words is null)
-        {
-            return NotFound();
-        }
-
-        return (List<Word>) words.Take(Limit);
     }
 
     [HttpPost]
     public async Task<IActionResult> Post(User newUser)
     {
-        Console.Write("Posted");
-
         await _usersService.CreateAsync(newUser);
-
         return CreatedAtAction(nameof(Get), new { id = newUser.Id }, newUser);
     }
 

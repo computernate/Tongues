@@ -35,7 +35,9 @@ public class UsersService{
         await _usersCollection.DeleteOneAsync(x => x.Id == id);
 
     public async Task<List<Word>> GetWordsAsync(string id) =>
-        await _usersCollection.Find(x => x.Id == id).Project(u => u.Words).FirstOrDefaultAsync();
+        await _usersCollection.Find(x => x.Id == id)
+            .Project(u => u.Words)
+            .FirstOrDefaultAsync();
     public async Task UpdateWordsAsync(string id, List<Word> wordList) {
         var update = Builders<User>.Update.Set(x => x.Words, wordList);
         await _usersCollection.FindOneAndUpdateAsync(x => x.Id == id, update);

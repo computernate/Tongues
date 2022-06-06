@@ -54,6 +54,11 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{id:length(24)}/addLanguage")]
+    public async Task<IActionResult> addLanguage(string id, [FromBody]string language){
+        return NoContent();
+    }
+
     [HttpDelete("{id:length(24)}")]
     public async Task<IActionResult> Delete(string id)
     {

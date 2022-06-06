@@ -5,9 +5,9 @@ using MongoDB.Driver;
 
 namespace TonguesApi.Services;
 
-public class PublicGamesService{
-    private readonly IMongoCollection<PublicGame> _gamesCollection;
-    public PublicGamesService(IOptions<TonguesDatabaseSettings> TonguesDatabaseSettings)
+public class GamesService{
+    private readonly IMongoCollection<GameBase> _gamesCollection;
+    public GamesService(IOptions<TonguesDatabaseSettings> TonguesDatabaseSettings)
     {
         var mongoClient = new MongoClient(
             TonguesDatabaseSettings.Value.ConnectionString);
@@ -15,20 +15,20 @@ public class PublicGamesService{
         var mongoDatabase = mongoClient.GetDatabase(
             TonguesDatabaseSettings.Value.DatabaseName);
 
-        _gamesCollection = mongoDatabase.GetCollection<PublicGame>(
-            TonguesDatabaseSettings.Value.PublicGamesCollectionName);
+        _gamesCollection = mongoDatabase.GetCollection<GameBase>(
+            TonguesDatabaseSettings.Value.GamesCollectionName);
     }
 
-    public async Task<List<PublicGame>> GetAsync() =>
+    public async Task<List<GameBase>> GetAsync() =>
         await _gamesCollection.Find(_ => true).ToListAsync();
 
-    public async Task<PublicGame?> GetAsync(string id) =>
+    public async Task<GameBase?> GetAsync(string id) =>
         await _gamesCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    public async Task CreateAsync(PublicGame newPublicGameGame) =>
-        await _gamesCollection.InsertOneAsync(newPublicGameGame);
+    public async Task CreateAsync(GameBase newGameGame) =>
+        await _gamesCollection.InsertOneAsync(newGameGame);
 
-    public async Task UpdateAsync(string id, PublicGame updatedGame) =>
+    public async Task UpdateAsync(string id, GameBase updatedGame) =>
         await _gamesCollection.ReplaceOneAsync(x => x.Id == id, updatedGame);
 
     public async Task RemoveAsync(string id) =>

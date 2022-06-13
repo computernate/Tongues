@@ -1132,24 +1132,26 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\u1095732\\.nuget\\packages\\": {}
+    "C:\\Users\\nater\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Tongues\\TonguesApi\\TonguesApi.csproj",
+      "projectUniqueName": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj",
       "projectName": "TonguesApi",
-      "projectPath": "E:\\Tongues\\TonguesApi\\TonguesApi.csproj",
-      "packagesPath": "C:\\Users\\u1095732\\.nuget\\packages\\",
-      "outputPath": "E:\\Tongues\\TonguesApi\\obj\\",
+      "projectPath": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj",
+      "packagesPath": "C:\\Users\\nater\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\u1095732\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\nater\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net6.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {

@@ -13,6 +13,8 @@ public class WordsController : ControllerBase
     public WordsController(UsersService usersService) =>
         _usersService = usersService;
 
+    //We want anything odd to come first (So they are using words twice in a row)
+    //Then anything brand new, then anything older. This sorts the words for us.
     private int wordSortOrder(Word w1, Word w2){
         int score1 = 0;
         int score2 = 0;
@@ -38,16 +40,12 @@ public class WordsController : ControllerBase
         return score2 - score1;
     }
 
-
+    //Get the words based on the target language
     [HttpGet("{language:int}")]
     public async Task<ActionResult<List<Word>>> GetWords(string id, int language, int limit=0)
     {
         List<Word> words = await _usersService.GetWordsAsync(id);
-
-        if (words is null)
-        {
-            return NotFound();
-        }
+        if (words is null)return NotFound();
 
         if(limit == 0)
             return words;
@@ -56,28 +54,23 @@ public class WordsController : ControllerBase
             return words.Take(limit).ToList<Word>();
     }
 
-
+    //Get a word from the user based on its id
     [HttpGet("{wordId:int}")]
     public async Task<ActionResult<Word>> GetWord(string id, int wordId)
     {
         var words = await _usersService.GetWordsAsync(id);
+        if (words is null)return NotFound();
 
-        if (words is null)
-        {
-            return NotFound();
-        }
         return words.Where(i => i.id == wordId).FirstOrDefault();
     }
 
+    //Add a new word
     [HttpPost]
     public async Task<IActionResult> AddWord(string id, [FromBody]Word newWord)
     {
         List<Word> words = await _usersService.GetWordsAsync(id);
+        if (words is null)return NotFound();
 
-        if (words is null)
-        {
-            return NotFound();
-        }
         Random rnd = new Random();
         newWord.id=rnd.Next(1048575);
         words.Add(newWord);
@@ -88,6 +81,7 @@ public class WordsController : ControllerBase
         return NoContent();
     }
 
+    //Use a word. Add one to its times used, update the timestamp, and resort the words
     [HttpPut("{wordId:int}")]
     public async Task<IActionResult> UseWord(string id, int wordId)
     {
@@ -95,10 +89,7 @@ public class WordsController : ControllerBase
 
         Word word = words.Where(i => i.id == wordId).FirstOrDefault();
 
-        if (words is null || word is null)
-        {
-            return NotFound();
-        }
+        if (words is null || word is null) return NotFound();
         word.timesUsed++;
         word.lastUsed = DateTime.Now;
         words.Sort(wordSortOrder);
@@ -107,6 +98,7 @@ public class WordsController : ControllerBase
         return NoContent();
     }
 
+    //Edits a specific word
     [HttpPut("{wordId:int}")]
     public async Task<IActionResult> EditWord(string id, int wordId, [FromBody]Word newWord)
     {
@@ -114,10 +106,7 @@ public class WordsController : ControllerBase
 
         Word word = words.Where(i => i.id == wordId).FirstOrDefault();
 
-        if (words is null || word is null)
-        {
-            return NotFound();
-        }
+        if (words is null || word is null) return NotFound();
         
         word.definition1=newWord.definition1;
         word.definition2=newWord.definition2;
@@ -125,6 +114,8 @@ public class WordsController : ControllerBase
         await _usersService.UpdateWordsAsync(id, words);
         return NoContent();
     }
+
+    //Delete a word by its id
     [HttpDelete("{wordId:int}")]
     public async Task<IActionResult> DeleteWord(string id, int wordId){
         List<Word> words = await _usersService.GetWordsAsync(id);

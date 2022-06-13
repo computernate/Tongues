@@ -19,8 +19,16 @@ public class GamesService{
             TonguesDatabaseSettings.Value.GamesCollectionName);
     }
 
-    public async Task<List<GameBase>> GetAsync() =>
-        await _gamesCollection.Find(_ => true).ToListAsync();
+    public async Task<List<GameBase>> GetAsync(int start, int limit, List<int> languages) =>
+        await _gamesCollection.Find(x => languages.Contains(x.OwnerLanguage) && x.isPublic == true)
+            .Skip(start)
+            .Limit(limit)
+            .ToListAsync();
+    public async Task<List<GameBase>> GetAsync(int start, int limit, int language) =>
+        await _gamesCollection.Find(x => x.OwnerLanguage == language && x.isPublic == true)
+            .Skip(start)
+            .Limit(limit)
+            .ToListAsync();
 
     public async Task<GameBase?> GetAsync(string id) =>
         await _gamesCollection.Find(x => x.Id == id).FirstOrDefaultAsync();

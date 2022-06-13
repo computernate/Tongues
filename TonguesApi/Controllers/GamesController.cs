@@ -14,18 +14,20 @@ public class GamesController : ControllerBase
         _gamesService = gamesService;
 
     [HttpGet]
-    public async Task<List<GameBase>> Get(int start, int limit) =>
-        await _gamesService.GetAsync(start, limit);
+    public async Task<List<GameBase>> Get(int start, int limit, List<int> languages) {
+        if(languages.Count == 1){
+            return await _gamesService.GetAsync(start, limit, languages[0]);
+        }
+        else{
+            return await _gamesService.GetAsync(start, limit, languages);
+        }
+    }
 
     [HttpGet("{id:length(24)}")]
     public async Task<ActionResult<GameBase>> Get(string id)
     {
         var game = await _gamesService.GetAsync(id);
-
-        if (game is null)
-        {
-            return NotFound();
-        }
+        if (game is null) return NotFound();
 
         return game;
     }
@@ -34,19 +36,16 @@ public class GamesController : ControllerBase
     public async Task<IActionResult> Post(GameBase newGame)
     {
         await _gamesService.CreateAsync(newGame);
-
         return CreatedAtAction(nameof(Get), new { id = newGame.Id }, newGame);
     }
 
+    
     [HttpPut("{id:length(24)}")]
     public async Task<IActionResult> Update(string id, GameBase updatedGame)
     {
         var game = await _gamesService.GetAsync(id);
 
-        if (game is null)
-        {
-            return NotFound();
-        }
+        if (game is null) return NotFound();
 
         updatedGame.Id = game.Id;
 
@@ -60,10 +59,7 @@ public class GamesController : ControllerBase
     {
         var game = await _gamesService.GetAsync(id);
 
-        if (game is null)
-        {
-            return NotFound();
-        }
+        if (game is null) return NotFound();
 
         await _gamesService.RemoveAsync(id);
 

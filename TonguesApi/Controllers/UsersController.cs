@@ -22,11 +22,7 @@ public class UsersController : ControllerBase
     {
         Console.WriteLine(id);
         var user = await _usersService.GetAsync(id);
-
-        if (user is null)
-        {
-            return NotFound();
-        }
+        if (user is null) return NotFound();
         return user;
     }
 
@@ -41,12 +37,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Update(string id, User updatedUser)
     {
         var user = await _usersService.GetAsync(id);
-
-        if (user is null)
-        {
-            return NotFound();
-        }
-
+        if (user is null) return NotFound();
         updatedUser.Id = user.Id;
 
         await _usersService.UpdateAsync(id, updatedUser);
@@ -54,8 +45,21 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    [HttpPut("{id:length(24)}/addLanguage")]
-    public async Task<IActionResult> addLanguage(string id, [FromBody]string language){
+    [HttpPut("{id:length(24)}/addLearningLanguage")]
+    public async Task<IActionResult> addLLanguage(string id, [FromBody]int language, [FromBody]int level){
+        var user = await _usersService.GetAsync(id);
+        if (user is null) return NotFound();
+        user.LearningLangueages.Add(new UserLanguage(language, level));
+        await _usersService.UpdateAsync(id, user);
+        return NoContent();
+    }
+
+    [HttpPut("{id:length(24)}/addNativeLanguage")]
+    public async Task<IActionResult> addNLanguage(string id, [FromBody]int language, [FromBody]int level){
+        var user = await _usersService.GetAsync(id);
+        if (user is null) return NotFound();
+        user.NativeLangueages.Add(new UserLanguage(language, level));
+        await _usersService.UpdateAsync(id, user);
         return NoContent();
     }
 

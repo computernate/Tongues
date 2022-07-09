@@ -5,123 +5,327 @@ using Microsoft.AspNetCore.Mvc;
 namespace TonguesApi.Controllers;
 
 [Produces("application/json")]
-[Route("api/Users/{id:length(24)}/Words")]
+[Route("api/Words")]
 public class WordsController : ControllerBase
 {
+    private readonly WordsService _wordsService;
     private readonly UsersService _usersService;
-    
-    public WordsController(UsersService usersService) =>
-        _usersService = usersService;
+    private static int bucketSize = 15;
+    private static int basicBucketSize = 10;
 
-    //We want anything odd to come first (So they are using words twice in a row)
-    //Then anything brand new, then anything older. This sorts the words for us.
-    private int wordSortOrder(Word w1, Word w2){
-        int score1 = 0;
-        int score2 = 0;
-        if(w1.timesUsed % 2 == 1){
-            score1 -= 10;
+
+    public WordsController(WordsService wordsService, UsersService usersService) {
+        _wordsService = wordsService;
+        _usersService = usersService;
+    }
+    
+
+
+    
+    private async Task<BasicWordBucket> UpdateUserWordBucket(User user, int languageId){
+
+        string newBucketId = user.WordBuckets.Find(bucket => bucket.Language2 == languageId).Id;
+        WordBucket oldBucket = await _wordsService.GetAsync(newBucketId);
+        BasicWordBucket newBucket = new BasicWordBucket(oldBucket);
+
+        if(newBucket.Words.Count < basicBucketSize && oldBucket.NextBucketId!=string.Empty){
+            WordBucket nextBucket = await _wordsService.GetAsync(oldBucket.NextBucketId);
+            newBucket.Words.AddRange(nextBucket.Words.Take(basicBucketSize-newBucket.Words.Count).ToList());
         }
-        if(w2.timesUsed % 2 == 1){
-            score2 -= 10;
+
+        user.WordBuckets.RemoveAll(bucket => bucket.Language2 == languageId);
+        user.WordBuckets.Add(newBucket);
+
+        await _usersService.UpdateAsync(user.Id, user);
+
+        return newBucket;
+    }
+
+
+    private async Task<BasicWordBucket> UpdateUserWordBucket(User user, WordBucket newBucket){
+
+        user.WordBuckets.RemoveAll(bucket => bucket.Language2 == newBucket.Language2);
+
+        if(newBucket.Words.Count < basicBucketSize && newBucket.NextBucketId!=string.Empty){
+            WordBucket? nextBucket = await _wordsService.GetAsync(newBucket.NextBucketId);
+            newBucket.Words.AddRange(nextBucket.Words.Take(basicBucketSize-newBucket.Words.Count).ToList());
+        }
+        BasicWordBucket basicBucket = new BasicWordBucket(newBucket);
+        user.WordBuckets.Add(basicBucket);
+
+        await _usersService.UpdateAsync(user.Id, user);
+
+        return basicBucket;
+    }
+
+
+
+    //Get the words
+    [HttpGet("{id:length(24)}")]
+    public async Task<ActionResult<WordBucket>> Get(string id)
+    {
+        WordBucket? bucket = await _wordsService.GetAsync(id);
+        if (bucket is null) return NotFound();
+        return bucket;
+    }
+
+
+
+    [HttpPost("{id:length(24)}")]
+    public async Task<IActionResult> Post(string id, [FromBody]Word newWord)
+    {
+        WordBucket? bucket = await _wordsService.GetAsync(id);
+        if (bucket is null || bucket.LastBucketId != string.Empty)  return NotFound();
+        //If lastBucketId exists, return an error
+        User? user = await _usersService.GetIdAsync(bucket.UserId);
+        if (user is null) {
+            return NotFound();
+        }
+
+        newWord.calculateScore(user.WordModifier);
+        Word? extraWord = await InsertWordRecursive(bucket, newWord);
+        
+        if(extraWord != null){
+            WordBucket newBucket = new WordBucket(bucket, extraWord);
+            await _wordsService.CreateAsync(newBucket);
+            bucket.LastBucketId = newBucket.Id;
+            await _wordsService.UpdateAsync(bucket.Id, bucket);
+            BasicWordBucket returnBucket = await UpdateUserWordBucket(user, newBucket);
+            return Ok(returnBucket);
+        }
+        else{
+            BasicWordBucket returnBucket = await UpdateUserWordBucket(user, bucket);
+            return Ok(returnBucket);
         }
         
-        if(w1.lastUsed == DateTime.MinValue){
-            score1-=3;
+    }
+
+
+
+    [HttpPost("newLanguage")]
+    public async Task<IActionResult> PostBucket([FromBody]WordBucket newBucket)
+    {
+        User? updateUser = await _usersService.GetIdAsync(newBucket.UserId);
+        if(updateUser is null) return NotFound();
+
+        await _wordsService.CreateAsync(newBucket);
+
+        BasicWordBucket returnBucket = await UpdateUserWordBucket(updateUser, newBucket);
+        return Ok(returnBucket);
+    }
+
+
+
+    public async Task<Word> InsertWordRecursive(WordBucket bucket, Word useWord){
+        Word? returningWord = null;
+        //Start recursive:
+            //Try to put word in bucket
+        int index = bucket.Words.BinarySearch(useWord);
+
+        if(index >= bucket.Words.Count && bucket.NextBucketId != null){
+            //If the word lands beyond the scope, and there is a next bucket, add it to the next bucket
+            WordBucket? nextBucket = await _wordsService.GetAsync(bucket.NextBucketId);
+            useWord = await InsertWordRecursive(nextBucket, useWord);
+        }
+        if(useWord == null) return null;
+
+        //Take next bucket's output and sort it here
+        index = bucket.Words.BinarySearch(useWord);
+        if (index < 0)  index = ~index;
+        bucket.Words.Insert(index, useWord);
+
+        //If the bucket is full, pop and return
+        if(bucket.Words.Count >= bucketSize){
+            returningWord = bucket.Words[0];
+            bucket.Words.RemoveAt(0);
+        }
+        await _wordsService.UpdateAsync(bucket.Id, bucket);
+        return returningWord;
+    }
+
+
+    private async Task UseWordRecursive(WordBucket workingBucket, Word newWord){
+        int index = workingBucket.Words.BinarySearch(newWord);
+        if (index < 0)  index = ~index;
+        if (index == 0){
+            //If there is no last bucket, insert at 0 and return
+            if(workingBucket.LastBucketId==string.Empty){
+                workingBucket.Words.Insert(0, newWord);
+            }
+            else{
+                //Get the bottom of the last bucket
+                WordBucket lastBucket = await _wordsService.GetAsync(workingBucket.LastBucketId);
+                Word lastWord = lastBucket.Words.Last();
+                //If their word is greater, put newWord at 0 and return
+                if(newWord.CompareTo(lastWord)>=0){
+                    workingBucket.Words.Insert(0, newWord);
+                }
+                //If ours is greater, take theirs and UseWordRecursive their bucket with new word
+                else{
+                    workingBucket.Words.Insert(0, lastWord);
+                    lastBucket.Words.RemoveAt(lastBucket.Words.Count-1);
+                    UseWordRecursive(lastBucket, newWord);
+                }
+            }
+        }
+        else if(index >= workingBucket.Words.Count-1){
+            //If there is no next bucket, insert at 0 and return
+            if(workingBucket.NextBucketId==string.Empty){
+                workingBucket.Words.Add(newWord);
+            }
+            else{
+                //Get the bottom of the last bucket
+                WordBucket nextBucket = await _wordsService.GetAsync(workingBucket.NextBucketId);
+                Word nextWord = nextBucket.Words[0];
+                //If their word is less, put newWord at Count and return
+                if(newWord.CompareTo(nextWord)<=0){
+                    workingBucket.Words.Add(newWord);
+                }
+                //If ours is less, take theirs and UseWordRecursive their bucket with new word
+                else{
+                    workingBucket.Words.Add(nextWord);
+                    nextBucket.Words.RemoveAt(0);
+                    UseWordRecursive(nextBucket, newWord);
+                }
+            }
         }
         else{
-            score1 += (int) Math.Floor(w1.timesUsed / (DateTime.Now - w1.lastUsed).TotalDays);
+                workingBucket.Words.Insert(index, newWord);
         }
-        if(w2.lastUsed == DateTime.MinValue){
-            score2-=3;
-        }
-        else{
-            score2 += (int) Math.Floor(w2.timesUsed / (DateTime.Now - w2.lastUsed).TotalDays);
-        }
-        return score2 - score1;
-    }
-
-    //Get the words based on the target language
-    [HttpGet("{language:int}")]
-    public async Task<ActionResult<List<Word>>> GetWords(string id, int language, int limit=0)
-    {
-        List<Word> words = await _usersService.GetWordsAsync(id);
-        if (words is null)return NotFound();
-
-        if(limit == 0)
-            return words;
-        else
-            words = words.FindAll(x => x.language2 == language);
-            return words.Take(limit).ToList<Word>();
-    }
-
-    //Get a word from the user based on its id
-    [HttpGet("{wordId:int}")]
-    public async Task<ActionResult<Word>> GetWord(string id, int wordId)
-    {
-        var words = await _usersService.GetWordsAsync(id);
-        if (words is null)return NotFound();
-
-        return words.Where(i => i.id == wordId).FirstOrDefault();
-    }
-
-    //Add a new word
-    [HttpPost]
-    public async Task<IActionResult> AddWord(string id, [FromBody]Word newWord)
-    {
-        List<Word> words = await _usersService.GetWordsAsync(id);
-        if (words is null)return NotFound();
-
-        Random rnd = new Random();
-        newWord.id=rnd.Next(1048575);
-        words.Add(newWord);
-
-        words.Sort(wordSortOrder);
-
-        await _usersService.UpdateWordsAsync(id, words);
-        return NoContent();
+        await _wordsService.UpdateAsync(workingBucket.Id, workingBucket);
     }
 
     //Use a word. Add one to its times used, update the timestamp, and resort the words
-    [HttpPut("{wordId:int}")]
-    public async Task<IActionResult> UseWord(string id, int wordId)
+    [HttpPut("{id:length(24)}/Use/{index:int}")]
+    public async Task<IActionResult> UseWord(string id, int index)
     {
-        List<Word> words = await _usersService.GetWordsAsync(id);
+        //Remove the word from the bucket
+        WordBucket bucket = await _wordsService.GetAsync(id);
+        if(bucket is null || bucket.Words.Count <= index) return NotFound();
+        Word removedWord = bucket.Words[index];
+        User updateUser = await _usersService.GetIdAsync(bucket.UserId);
+        bucket.Words.RemoveAt(index);
 
-        Word word = words.Where(i => i.id == wordId).FirstOrDefault();
+        removedWord.TimesUsed++;
+        removedWord.LastUsed=DateTime.Now;
+        removedWord.calculateScore(updateUser.WordModifier);
 
-        if (words is null || word is null) return NotFound();
-        word.timesUsed++;
-        word.lastUsed = DateTime.Now;
-        words.Sort(wordSortOrder);
+        await UseWordRecursive(bucket, removedWord);
 
-        await _usersService.UpdateWordsAsync(id, words);
-        return NoContent();
+        BasicWordBucket returnBucket = await UpdateUserWordBucket(updateUser, bucket.Language2);
+        return Ok(returnBucket);
     }
+
+
 
     //Edits a specific word
-    [HttpPut("{wordId:int}")]
-    public async Task<IActionResult> EditWord(string id, int wordId, [FromBody]Word newWord)
+    [HttpPut("{id:length(24)}/Edit/{index:int}")]
+    public async Task<IActionResult> EditWord(string id, int index, [FromBody]Word newWord)
     {
-        List<Word> words = await _usersService.GetWordsAsync(id);
-
-        Word word = words.Where(i => i.id == wordId).FirstOrDefault();
-
-        if (words is null || word is null) return NotFound();
+        //Get the bucket
+        WordBucket bucket = await _wordsService.GetAsync(id);
+        if(bucket is null || bucket.Words.Count >= index) return NotFound();
+        User updateUser = await _usersService.GetIdAsync(bucket.UserId);
+        if(id == string.Empty) return NotFound();
+        bucket.Words[index].Definition = newWord.Definition;
+        bucket.Words[index].Term = newWord.Term;
+        await _wordsService.UpdateAsync(id, bucket);
         
-        word.definition1=newWord.definition1;
-        word.definition2=newWord.definition2;
-
-        await _usersService.UpdateWordsAsync(id, words);
-        return NoContent();
+        BasicWordBucket returnBucket = await UpdateUserWordBucket(updateUser, bucket.Language2);
+        return Ok(returnBucket);
     }
 
-    //Delete a word by its id
-    [HttpDelete("{wordId:int}")]
-    public async Task<IActionResult> DeleteWord(string id, int wordId){
-        List<Word> words = await _usersService.GetWordsAsync(id);
 
-        words.RemoveAll(x => x.id == wordId);
-        await _usersService.UpdateWordsAsync(id, words);
+
+    //Delete a word
+    [HttpDelete("{startId:length(24)}/{bucketId:length(24)}/{index:int}")]
+    public async Task<IActionResult> DeleteWord(string startId, string bucketId, int index){
+        WordBucket? checkingBucket = await _wordsService.GetAsync(startId);
+        if(checkingBucket is null || checkingBucket.LastBucketId != string.Empty || checkingBucket.Words.Count >= index) return NotFound();
+        Word? passingWord = null;
+        User updateUser = await _usersService.GetIdAsync(checkingBucket.UserId);
+
+        while(true){
+            if(checkingBucket == null) return NotFound();
+
+            if(passingWord != null){
+                checkingBucket.Words.Insert(0, passingWord);
+            }
+
+            if(checkingBucket.Id == bucketId){
+                checkingBucket.Words.RemoveAt(index);
+                await _wordsService.UpdateAsync(checkingBucket.Id, checkingBucket);
+                if(checkingBucket.Id != startId) checkingBucket = await _wordsService.GetAsync(startId);
+                BasicWordBucket returnBucket = await UpdateUserWordBucket(updateUser, checkingBucket);
+                return Ok(returnBucket);
+            }
+
+            else{
+
+                passingWord = checkingBucket.Words.Last();
+                checkingBucket.Words.RemoveAt(checkingBucket.Words.Count-1);
+                await _wordsService.UpdateAsync(checkingBucket.Id, checkingBucket);
+
+                if(checkingBucket.NextBucketId==string.Empty) return NotFound();
+
+                if(checkingBucket.Words.Count==0) {
+                    startId = checkingBucket.NextBucketId;
+                    await _wordsService.RemoveAsync(checkingBucket.Id);
+                    checkingBucket = await _wordsService.GetAsync(startId);
+                    checkingBucket.LastBucketId="";
+                }
+
+                else checkingBucket = await _wordsService.GetAsync(checkingBucket.NextBucketId);
+            }
+        }
+    }
+
+    //NOTE: THIS IS THE 
+    [HttpPut("{id:length(24)}/Resort")]
+    public async Task<IActionResult> Sort(string id){
+
+        List<WordBucket> allBuckets = new List<WordBucket>();
+        List<Word> allWords = new List<Word>();
+        WordBucket currentBucket = await _wordsService.GetAsync(id);;
+        if(currentBucket is null || currentBucket.LastBucketId != string.Empty) return NotFound();
+        
+        while(currentBucket is not null){
+            allWords.AddRange(currentBucket.Words);
+            allBuckets.Insert(0, currentBucket);
+            if(currentBucket.NextBucketId!=string.Empty){
+                currentBucket = await _wordsService.GetAsync(currentBucket.NextBucketId);
+            }
+            else{
+                break;
+            }
+        }
+        
+        User user = await _usersService.GetIdAsync(currentBucket.UserId);
+
+        foreach(Word word in allWords){
+            word.calculateScore(user.WordModifier);
+        }
+
+        allWords.Sort();
+        List<Word> tempList;
+        
+        foreach(WordBucket bucket in allBuckets){
+            tempList =  allWords.TakeLast(bucketSize).ToList();
+            if(allWords.Count > bucketSize){
+                allWords.RemoveRange(allWords.Count-bucketSize, bucketSize);
+            }
+            else{
+                allWords = null;
+            }
+            bucket.Words = tempList;
+            await _wordsService.UpdateAsync(bucket.Id, bucket);
+            if(bucket.LastBucketId==string.Empty){
+                BasicWordBucket returnBucket = await UpdateUserWordBucket(user, bucket);
+                return Ok(returnBucket);
+            }
+        }
+        
+
         return NoContent();
     }
 }

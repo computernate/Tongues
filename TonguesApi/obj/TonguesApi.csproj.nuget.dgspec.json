@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj": {}
+    "E:\\Tongues\\TonguesApi\\TonguesApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj": {
+    "E:\\Tongues\\TonguesApi\\TonguesApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj",
+        "projectUniqueName": "E:\\Tongues\\TonguesApi\\TonguesApi.csproj",
         "projectName": "TonguesApi",
-        "projectPath": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\TonguesApi.csproj",
-        "packagesPath": "C:\\Users\\nater\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\nater\\Documents\\Tongues\\Tongues\\TonguesApi\\obj\\",
+        "projectPath": "E:\\Tongues\\TonguesApi\\TonguesApi.csproj",
+        "packagesPath": "C:\\Users\\u1095732\\.nuget\\packages\\",
+        "outputPath": "E:\\Tongues\\TonguesApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\nater\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\u1095732\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -43,6 +41,10 @@
             "FirebaseAdmin": {
               "target": "Package",
               "version": "[2.3.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[6.0.5, )"
             },
             "MongoDB.Driver": {
               "target": "Package",

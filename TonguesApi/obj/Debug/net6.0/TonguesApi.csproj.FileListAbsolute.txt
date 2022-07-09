@@ -102,3 +102,10 @@ C:\Users\nater\Documents\Tongues\Tongues\TonguesApi\obj\Debug\net6.0\TonguesApi.
 C:\Users\nater\Documents\Tongues\Tongues\TonguesApi\obj\Debug\net6.0\refint\TonguesApi.dll
 C:\Users\nater\Documents\Tongues\Tongues\TonguesApi\obj\Debug\net6.0\TonguesApi.genruntimeconfig.cache
 C:\Users\nater\Documents\Tongues\Tongues\TonguesApi\obj\Debug\net6.0\ref\TonguesApi.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.IdentityModel.JsonWebTokens.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.IdentityModel.Logging.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\Microsoft.IdentityModel.Tokens.dll
+E:\Tongues\TonguesApi\bin\Debug\net6.0\System.IdentityModel.Tokens.Jwt.dll

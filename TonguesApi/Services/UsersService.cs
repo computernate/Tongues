@@ -2,7 +2,6 @@ using TonguesApi.Models;
 using TonguesApi.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using MongoDB.Bson;
 
 namespace TonguesApi.Services;
 
@@ -24,7 +23,9 @@ public class UsersService{
         await _usersCollection.Find(_ => true).ToListAsync();
 
     //Gets a specific user by their ID
-    public async Task<User?> GetAsync(string id) =>
+    public async Task<User?> GetAsync(string email) =>
+        await _usersCollection.Find(x => x.Email == email).FirstOrDefaultAsync();
+    public async Task<User?> GetIdAsync(string id) =>
         await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
     //Creates a new user
@@ -38,16 +39,4 @@ public class UsersService{
     //Deletes a user
     public async Task RemoveAsync(string id) =>
         await _usersCollection.DeleteOneAsync(x => x.Id == id);
-
-    //Gets all words based on a user's ID
-    public async Task<List<Word>> GetWordsAsync(string id) =>
-        await _usersCollection.Find(x => x.Id == id)
-            .Project(u => u.Words)
-            .FirstOrDefaultAsync();
-
-    //Updates a user's wordlist
-    public async Task UpdateWordsAsync(string id, List<Word> wordList) {
-        var update = Builders<User>.Update.Set(x => x.Words, wordList);
-        await _usersCollection.FindOneAndUpdateAsync(x => x.Id == id, update);
-    }
 }

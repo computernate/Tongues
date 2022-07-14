@@ -75,6 +75,24 @@ public class GamesControllerBase : ControllerBase
     }
 
 
+    public async Task JoinChatGameWithUser(Game game, string userId){
+        //Create game
+        await _gamesService.CreateGameAsync(game);
+
+        //Update game in buckets
+        await UpdateBucketReferences(game);
+        
+        //Update user
+        GameBucketStorage user1Storage = await JoinGame(userId, game.GetBasicUser());
+        GameBucketStorage hostStorage = await JoinGame(game.HostId, game.GetBasicUser());
+
+        //Update Game
+        game.userBuckets.Add(user1Storage);
+        game.userBuckets.Add(hostStorage);
+        
+        await _gamesService.UpdateGameAsync(game.Id, game);
+    }
+
     public async Task<GameBucketStorage> JoinGame(string userId, UserGameBasic gameBasic){
 
         User user = await _usersService.GetIdAsync(userId);

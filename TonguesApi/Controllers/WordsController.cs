@@ -280,7 +280,7 @@ public class WordsController : ControllerBase
         }
     }
 
-    //NOTE: THIS IS THE 
+    //NOTE: THIS IS THE HEAD BUCKET
     [HttpPut("{id:length(24)}/Resort")]
     public async Task<IActionResult> Sort(string id){
 

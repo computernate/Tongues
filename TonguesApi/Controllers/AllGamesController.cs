@@ -1,6 +1,8 @@
 using TonguesApi.Models;
 using TonguesApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+
 
 namespace TonguesApi.Controllers;
 
@@ -15,18 +17,44 @@ public class AllGamesController : ControllerBase
     }
 
     
-    [HttpGet("{id:length(24)}")]
-    public async Task<ActionResult<GameBucket>> Get(string id)
-    {
-        GameBucket? bucket = await _gamesService.GetBucketAsync(id);
-        if (bucket is null) return NotFound();
-        return bucket;
+    [HttpGet]
+    public async Task<ActionResult<List<GameParent>>> GetGames(int LearningLanguage, string NativeLanguages, int start=0){
+        //NOTE:
+        //LEARNING LANGUAGE in the parameters refers to the language that the USER is trying to learn
+        //LEARNING LANGUAGE in the database refers to the language that the HOST is trying to learn
+        List<int> nativeLanguagesSplit = NativeLanguages
+            .Split(',')
+            .Where(x => int.TryParse(x, out _))
+            .Select(int.Parse)
+            .ToList();
+        List<GameParent> parentList = await _gamesService.GetParentsAsync(start, nativeLanguagesSplit, LearningLanguage);
+        //The games list now has all the data for the game parents. However, if we were to serialize it, it would be a list
+        //of gameParents, not of the children. IE. NextLine wouldn't have firstMessage since it isnt' a nextlineparent, it is a
+        //game parent. We need to serialize this ourselves.
+        string json = "[";
+        foreach(GameParent parent in parentList){
+            Console.WriteLine(parent.Type);
+            switch(parent.Type){
+                case 1:
+                    json += JsonSerializer.Serialize<NextLineGameParent>((NextLineGameParent) parent);
+                    break;
+                default:
+                    json += JsonSerializer.Serialize<GameParent>(parent);
+                    break;
+            }
+            json += ",";
+        }
+        json = json.TrimEnd(',');
+        json += "]";
+        return Content(json, "application/json");
     }
 
-    [HttpGet("{learningLanguage}/{nativeLanguage}")]
-    public async Task<ActionResult<string>> GetByBucket(int learningLanguage, int nativeLanguage){
-        GameBucket? headBucket = await _gamesService.GetBucketHead(learningLanguage, nativeLanguage);
-        if(headBucket is null) return NotFound();
-        return headBucket.Id;
+    [HttpGet("{id:length(24)}")]
+    public async Task<ActionResult<GameParent>> Get(string id)
+    {
+        GameParent? parent = await _gamesService.GetParentAsync(id);
+        if (parent is null) return NotFound();
+        return parent;
     }
+
 }

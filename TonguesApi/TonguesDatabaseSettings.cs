@@ -8,7 +8,7 @@ namespace TonguesApi.Data{
         public string WordsCollectionName{ get; set; } = string.Empty;
 
 
-        public string GameBucketsCollectionName{ get; set; } = string.Empty;
+        public string GameParentsCollectionName{ get; set; } = string.Empty;
         public string GamesCollectionName{ get; set; } = string.Empty;
         public string UserGameBucketsCollectionName{ get; set; } = string.Empty;
     }

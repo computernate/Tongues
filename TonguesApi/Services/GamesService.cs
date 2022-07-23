@@ -6,7 +6,7 @@ using MongoDB.Driver;
 namespace TonguesApi.Services;
 
 public class GamesService{
-    private readonly IMongoCollection<GameBucket> _gameBucketsCollection;
+    private readonly IMongoCollection<GameParent> _gameParentsCollection;
     private readonly IMongoCollection<UserGameBucket> _userGameCollection;
     private readonly IMongoCollection<Game> _gamesCollection;
     public GamesService(IOptions<TonguesDatabaseSettings> TonguesDatabaseSettings)
@@ -17,8 +17,8 @@ public class GamesService{
         var mongoDatabase = mongoClient.GetDatabase(
             TonguesDatabaseSettings.Value.DatabaseName);
 
-        _gameBucketsCollection = mongoDatabase.GetCollection<GameBucket>(
-            TonguesDatabaseSettings.Value.GameBucketsCollectionName);
+        _gameParentsCollection = mongoDatabase.GetCollection<GameParent>(
+            TonguesDatabaseSettings.Value.GameParentsCollectionName);
 
         _userGameCollection = mongoDatabase.GetCollection<UserGameBucket>(
             TonguesDatabaseSettings.Value.UserGameBucketsCollectionName);
@@ -27,16 +27,21 @@ public class GamesService{
             TonguesDatabaseSettings.Value.GamesCollectionName);
     }
 
-    public async Task<GameBucket> GetBucketAsync(string id) =>
-        await _gameBucketsCollection.Find(x => x.Id==id).FirstOrDefaultAsync();
-    public async Task CreateBucketAsync(GameBucket newGameBucket) =>
-        await _gameBucketsCollection.InsertOneAsync(newGameBucket);
-    public async Task UpdateBucketAsync(string id, GameBucket updatedGame) =>
-        await _gameBucketsCollection.ReplaceOneAsync(x => x.Id == id, updatedGame);
-    public async Task RemoveBucketAsync(string id) =>
-        await _gameBucketsCollection.DeleteOneAsync(x => x.Id == id);
-    public async Task<GameBucket> GetBucketHead(int language1, int language2)=>
-        await _gameBucketsCollection.Find(x=> x.LearningLanguageId==language1&&x.NativeLanguageId==language2).FirstOrDefaultAsync();
+    public async Task<List<GameParent>> GetParentsAsync(int start, List<int> learningLanguages, int nativeLanguage){
+        //NOTE: Here, learninglangauge is the HOST'S learning languages. 
+        return await _gameParentsCollection.Find(
+            x => (learningLanguages == null || learningLanguages.Contains(x.LearningLanguage)) && 
+            (nativeLanguage == null || x.NativeLanguages.Contains(nativeLanguage))
+            ).Sort("{lastUpdated: 1}").Skip(start).Limit(25).ToListAsync();
+    }
+    public async Task<GameParent> GetParentAsync(string id) =>
+        await _gameParentsCollection.Find(x => x.Id==id).FirstOrDefaultAsync();
+    public async Task CreateParentAsync(GameParent newGameBucket) =>
+        await _gameParentsCollection.InsertOneAsync(newGameBucket);
+    public async Task UpdateParentAsync(string id, GameParent updatedGame) =>
+        await _gameParentsCollection.ReplaceOneAsync(x => x.Id == id, updatedGame);
+    public async Task RemoveParentAsync(string id) =>
+        await _gameParentsCollection.DeleteOneAsync(x => x.Id == id);
 
 
 

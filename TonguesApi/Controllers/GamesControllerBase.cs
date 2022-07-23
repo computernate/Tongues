@@ -17,51 +17,18 @@ public class GamesControllerBase : ControllerBase
 
 
 
-    public async Task AddGame(GameBasic game, string userId, int targetLanguage){
+    public async Task AddGame(GameParent game, string userId, int targetLanguage){
+        Console.WriteLine(userId);
         User user = await _usersService.GetIdAsync(userId);
-
-        game.HostId = user.Id;
-        List<GameBucketStorage> bucketList = new List<GameBucketStorage>();
-        GameBucket headBucket;
-
+        game.HostId = userId;
+        game.created=DateTime.Now;
+        game.lastUpdated=DateTime.Now;
+        game.LearningLanguage=targetLanguage;
         foreach(UserLanguage language in user.NativeLanguages){
-            //Get the head bucket, so we can know where to add the game publically
-            headBucket = await _gamesService.GetBucketHead(language.language, targetLanguage);
-
-            if(headBucket == null){
-                headBucket = new GameBucket(targetLanguage, language.language, "");
-                await _gamesService.CreateBucketAsync(headBucket);
-            }
-            else if(headBucket.gamesList.Count > gameBucketLength){
-                //If the bucket is full, create a new bucket and add the game
-                headBucket = new GameBucket(targetLanguage, language.language, headBucket.Id);
-                await _gamesService.CreateBucketAsync(headBucket);
-            }
-            bucketList.Add(new GameBucketStorage(headBucket.Id, headBucket.gamesList.Count));
+            game.NativeLanguages.Add(language.language);
         }
 
-        game.gameBuckets = bucketList;
-
-        foreach(GameBucketStorage storage in bucketList){
-            headBucket = await _gamesService.GetBucketAsync(storage.Id);
-            headBucket.gamesList.Add(game);
-            await _gamesService.UpdateBucketAsync(headBucket.Id, headBucket);
-        }
-    }
-
-
-
-
-    //
-    public async Task UpdateBucketReferences(Game game){
-        GameBucket gameBucket = await _gamesService.GetBucketAsync(game.sourceGameBucket.Id);
-        GameBasic basicGame = gameBucket.gamesList[game.sourceGameBucket.Index];
-
-        foreach(GameBucketStorage storage in basicGame.gameBuckets){
-            gameBucket = await _gamesService.GetBucketAsync(storage.Id);
-            gameBucket.gamesList[storage.Index] = basicGame;
-            await _gamesService.UpdateBucketAsync(gameBucket.Id, gameBucket);
-        }
+        await _gamesService.CreateParentAsync(game);
     }
     
 
@@ -78,13 +45,10 @@ public class GamesControllerBase : ControllerBase
     public async Task JoinChatGameWithUser(Game game, string userId){
         //Create game
         await _gamesService.CreateGameAsync(game);
-
-        //Update game in buckets
-        await UpdateBucketReferences(game);
         
         //Update user
-        GameBucketStorage user1Storage = await JoinGame(userId, game.GetBasicUser());
-        GameBucketStorage hostStorage = await JoinGame(game.HostId, game.GetBasicUser());
+        GameBucketStorage user1Storage = await JoinGame(userId, game);
+        GameBucketStorage hostStorage = await JoinGame(game.HostId, game);
 
         //Update Game
         game.userBuckets.Add(user1Storage);
@@ -93,13 +57,13 @@ public class GamesControllerBase : ControllerBase
         await _gamesService.UpdateGameAsync(game.Id, game);
     }
 
-    public async Task<GameBucketStorage> JoinGame(string userId, UserGameBasic gameBasic){
+    public async Task<GameBucketStorage> JoinGame(string userId, Game game){
 
         User user = await _usersService.GetIdAsync(userId);
-        GameBucket bucket = await _gamesService.GetBucketAsync(gameBasic.sourceGameBucket.Id);
+        GameParent parent = await _gamesService.GetParentAsync(game.parent);
 
         //Add the game to the user
-        UserBucketData? userData = user.GameBuckets.Find(x => x.LanguageId == bucket.LearningLanguageId);
+        UserBucketData? userData = user.GameBuckets.Find(x => x.LanguageId == parent.LearningLanguage);
         UserGameBucket? userBucketHead;
         if(userData != null){
             userBucketHead = await _gamesService.GetUserGameBucketAsync(userData.GameId);
@@ -109,33 +73,29 @@ public class GamesControllerBase : ControllerBase
         }
         if(userBucketHead == null || userBucketHead.gamesList.Count > gameBucketLength){
             if(userBucketHead == null){
-                userBucketHead = new UserGameBucket(userId, bucket.LearningLanguageId);
+                userBucketHead = new UserGameBucket(userId, parent.LearningLanguage);
             }
             else{
                 userBucketHead = new UserGameBucket(userBucketHead);
             }
-            userBucketHead.gamesList.Add(gameBasic);
+            userBucketHead.gamesList.Add(game.GetBasicUser());
             await _gamesService.CreateUserGameBucketAsync(userBucketHead);
             //Replace the user's bucket
-            user.GameBuckets.RemoveAll(x => x.LanguageId == bucket.LearningLanguageId);
-            user.GameBuckets.Add(new UserBucketData(userBucketHead.Id, bucket.LearningLanguageId));
+            user.GameBuckets.RemoveAll(x => x.LanguageId == parent.LearningLanguage);
+            user.GameBuckets.Add(new UserBucketData(userBucketHead.Id, parent.LearningLanguage));
         }
 
         else{
             //Otherwise, just add to the user bucket
-            userBucketHead.gamesList.Add(gameBasic);
+            userBucketHead.gamesList.Add(game.GetBasicUser());
             await _gamesService.UpdateUserGameBucketAsync(userBucketHead.Id, userBucketHead);
         }
         await _usersService.UpdateAsync(user.Id, user);
         return new GameBucketStorage(userBucketHead.Id, userBucketHead.gamesList.Count-1);
     }
 
-    public async Task MakeGameUnpublic(GameBasic game){
-        GameBucket gameBucket;
-        foreach(GameBucketStorage storageBucket in game.gameBuckets){
-            gameBucket = await _gamesService.GetBucketAsync(storageBucket.Id);
-            gameBucket.gamesList[storageBucket.Index].IsDeleted = true;
-            await _gamesService.UpdateBucketAsync(gameBucket.Id, gameBucket);
-        }
+    public async Task MakeGameUnpublic(GameParent game){
+        game.IsPublic = false;
+        await _gamesService.UpdateParentAsync(game.Id, game);
     }
 }

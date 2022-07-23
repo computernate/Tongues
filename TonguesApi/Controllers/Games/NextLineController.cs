@@ -24,11 +24,11 @@ public class NextLineController : GamesControllerBase
 
 
     //Things needed:
-    //Target lanugage
+    //First Message
     //Open Invitations
     [HttpPost]
-    public async Task<ActionResult> Create([FromBody] NextLineGameBasic newGame){
-        
+    public async Task<ActionResult> Create([FromBody] NextLineGameParent newGame){
+        Console.WriteLine("Trying to create");
         int language = Int32.Parse(this.HttpContext.Request.Headers["Language"]);
         string userId = AuthFunctions.VerifyUser(this.HttpContext.Request.Headers["AuthToken"]);
 
@@ -39,24 +39,22 @@ public class NextLineController : GamesControllerBase
 
 
 
-    [HttpPut("join")]
-    public async Task<ActionResult> Join([FromBody]GameBucketStorage gameId){
-
+    [HttpPut("join/{id:length(24)}")]
+    public async Task<ActionResult> Join(string Id){
         string userId = AuthFunctions.VerifyUser(this.HttpContext.Request.Headers["AuthToken"]);
+        NextLineGameParent gameParent = (NextLineGameParent) await _gamesService.GetParentAsync(Id);
+        NextLine game = new NextLine(gameParent);
+        game.parent = Id;
 
-        GameBucket gameBucket = await _gamesService.GetBucketAsync(gameId.Id);
-        NextLineGameBasic nextBasic = (NextLineGameBasic) gameBucket.gamesList[gameId.Index];
-        NextLine game = new NextLine(nextBasic);
-        game.sourceGameBucket = gameId;
-
-        nextBasic.openInvitations--;
-        if(nextBasic.openInvitations == -1){
+        gameParent.openInvitations--;
+        if(gameParent.openInvitations == -1){
             return new JsonResult("{'Error':'Game full'}");
         }
-        else if(nextBasic.openInvitations == 0){
-            await MakeGameUnpublic(nextBasic);
+        else if(gameParent.openInvitations == 0){
+            await MakeGameUnpublic(gameParent);
         }
-        JoinChatGameWithUser(game, userId);
+        await JoinChatGameWithUser(game, userId);
+        await _gamesService.UpdateParentAsync(gameParent.Id, gameParent);
         return NoContent();
     }
 

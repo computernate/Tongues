@@ -1,0 +1,1 @@
+{"version":3,"names":[],"sources":["FBSDKCallback.ts"],"sourcesContent":["export type RNFBSDKCallback = {\n  isCancelled: boolean;\n};\n"],"mappings":""}

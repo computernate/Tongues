@@ -135,7 +135,7 @@ const Login = (props) => {
 
   //navigation.replace("Home")
   return (
-    <KeyboardAvoidingView
+    <View
       style={styles.container}
       behavior="padding"
     >
@@ -151,6 +151,7 @@ const Login = (props) => {
       </View>
       <View style={styles.inputContainer}>
         <Image source={require("../images/logo.png")} style={styles.img} />
+        <Text style={styles.betweenText2}>Login</Text>
         <TextInput
           placeholder="Email:"
           placeholderTextColor="#FFF"
@@ -193,7 +194,7 @@ const Login = (props) => {
         </TouchableOpacity>
       </View>
       </LinearGradient>
-    </KeyboardAvoidingView>
+    </View>
   )
 }
 
@@ -204,10 +205,11 @@ const styles = StyleSheet.create({
     flex:1,
   },
   gradient:{
-    justifyContent:'center',
+    justifyContent:'flex-end',
     alignItems:'center',
     width:"100%",
-    height:"100%"
+    height:"100%",
+    paddingBottom:50
   },
   help:{
     position:'absolute',
@@ -223,8 +225,8 @@ const styles = StyleSheet.create({
     color:colors.a2
   },
   img:{
-    width:150,
-    height:160
+    width:'100%',
+    height:45
   },
   inputContainer:{
     width:'80%',
@@ -241,7 +243,8 @@ const styles = StyleSheet.create({
   betweenText1:{
     color:'white',
     marginVertical:10,
-    fontSize:15
+    fontSize:15,
+    fontFamily:'Sublima_ExtraBold'
   },
   betweenText2:{
     color:colors.a2,

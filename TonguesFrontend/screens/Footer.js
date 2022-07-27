@@ -6,7 +6,6 @@ import { useNavigation } from '@react-navigation/core'
 
 /*
   This is called the footer, but it really contains the basic overlay for the home page.
-  TODO: Make the footer different depending on what page you're on
   TODO: Add the langauge pull out menu
 */
 const Footer = (props) => {
@@ -15,6 +14,8 @@ const Footer = (props) => {
   const avatarImage = "../avatars/testavatar.png"
 
   const navigation = useNavigation()
+
+
 
   return (
     <View style={styles.container}>
@@ -31,26 +32,23 @@ const Footer = (props) => {
             </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity onPress={()=>console.log("NEW LANG TAB")} style={styles.profile.languageTab}>
-          <Image source={require('../images/japanFlag.png')} style={styles.profile.languageImage} />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.navContainer}>
 
-        <TouchableOpacity onPress={()=>props.setTabFunc('PublicGames')} style={styles.button}>
+        <TouchableOpacity onPress={()=>props.setTabFunc('PublicGames')} style={[styles.button, (props.tab=="PublicGames")?styles.active:null]}>
           <Image source={require("../images/PublicGamesNav.png")} style={styles.img} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={()=>props.setTabFunc('MyGames')} style={styles.button}>
+        <TouchableOpacity onPress={()=>props.setTabFunc('MyGames')} style={[styles.button,(props.tab=="MyGames")?styles.active:null]}>
           <Image source={require("../images/MyGamesNav.png")} style={styles.img} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={()=>props.setTabFunc('Chats')} style={styles.button}>
+        <TouchableOpacity onPress={()=>props.setTabFunc('Chats')} style={[styles.button,(props.tab=="Chats")?styles.active:null]}>
           <Image source={require("../images/ChatsNav.png")} style={styles.img} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={()=>props.setTabFunc('Words')} style={styles.button}>
+        <TouchableOpacity onPress={()=>props.setTabFunc('Words')} style={[styles.button, (props.tab=="Words")?styles.active:null]}>
           <Image source={require("../images/WordsNav.png")} style={styles.img} />
         </TouchableOpacity>
 
@@ -94,11 +92,6 @@ const styles = StyleSheet.create({
       backgroundColor:'#FFF',
       padding:5
     },
-    languageImage:{
-      width:100,
-      height:100,
-      borderTopLeftRadius:30
-    }
   },
   button:{
     flex:1,
@@ -110,5 +103,8 @@ const styles = StyleSheet.create({
     height:'100%',
     width:'100%',
     backgroundColor:'#ffe6e6'
+  },
+  active:{
+    borderColor:'red',
   }
 });

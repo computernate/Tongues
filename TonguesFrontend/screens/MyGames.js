@@ -63,7 +63,7 @@ const MyGames = (props) => {
             case 1:
               return <NextLineUserComponent key={index} data={data} />
             default:
-              return <PicturePerfect key={index} data={data} />
+              return <PicturePerfectUserComponent key={index} data={data} />
           }
         })
       }

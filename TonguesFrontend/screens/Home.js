@@ -8,6 +8,8 @@ import Chats from './Chats'
 import WordsWrapper from './wordsScreens/WordsWrapper'
 import MyProfile from './MyProfile'
 import Footer from './Footer'
+import LangTab from './LangTab'
+
 
 
 /*
@@ -18,28 +20,33 @@ class Home extends React.Component {
   constructor(props){
     super(props);
     this.state={
-      tab:'',
+      tab:'PublicGames',
       user: false,
+      learningLanguage:0,
     }
     AsyncStorage.getItem('@userData').then((value)=>{
-      this.setState({user:JSON.parse(value)});
+      this.setState({user:JSON.parse(value), learningLanguage:JSON.parse(value).learningLanguages[0]});
     });
   }
 
   setTabFromLink = (newTab) => {
     this.setState({tab : newTab})
   }
+  setLanguage = (language) => {
+    this.setState({learningLanguage : language})
+  }
+
 
   renderSwitch(tab, user) {
     switch(tab){
       case 'MyGames':
-        return <MyGames learningLanguage = "2" user={user} />
+        return <MyGames learningLanguage = {this.state.learningLanguage} user={this.state.user} />
       case 'Chats':
-        return <Chats learningLanguage = "2" user={user} />
+        return <Chats learningLanguage = {this.state.learningLanguage} user={this.state.user} />
       case 'Words':
-        return <WordsWrapper learningLanguage = "2" user={user} />
+        return <WordsWrapper learningLanguage = {this.state.learningLanguage} user={this.state.user} />
       default:
-        return <PublicGames learningLanguage = "2" user={user} />
+        return <PublicGames learningLanguage = {this.state.learningLanguage} user={this.state.user} />
       }
   }
 
@@ -52,7 +59,8 @@ class Home extends React.Component {
     return(
       <View style={styles.container}>
         {this.renderSwitch(this.state.tab, this.state.user)}
-        <Footer setTabFunc = {this.setTabFromLink} tab = {this.state.tab}/>
+        <Footer setTabFunc = {this.setTabFromLink} tab = {this.state.tab} language = {this.state.learningLanguage} />
+        <LangTab switchLanguage = {this.setLanguage} language = {this.state.learningLanguage} user={this.state.user}/>
       </View>
     )
   }

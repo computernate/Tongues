@@ -9,6 +9,7 @@ import {auth} from '../firebase';
 import { AppleButton } from '@invertase/react-native-apple-authentication';
 import {config} from '../config.js';
 import {colors} from '../baseColors.js'
+import * as Font from 'expo-font';
 //AAAAAAAAAAAAAAAAAAAAAGOYegEAAAAAXS%2BmSCVGtq4JRL0X7Iqa11K8kmw%3DT5iLB8R546LdBODDHdx5es9rLgQeoJUdarrvetwU53anpqVEBs
 
 /*
@@ -20,6 +21,7 @@ const Login = (props) => {
   var pre_loading = true;
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isLoaded, setIsLoaded] = useState(false)
 
   const navigation = useNavigation()
 
@@ -133,69 +135,79 @@ const Login = (props) => {
     return unsubscribe
   }, [])
 
+  Font.loadAsync({
+    'Sublima-ExtraBold': require('../assets/fonts/Sublima-ExtraBold.otf'),
+  }).then(()=>{
+    setIsLoaded(true);
+  })
   //navigation.replace("Home")
-  return (
-    <View
-      style={styles.container}
-      behavior="padding"
-    >
-    <LinearGradient colors={[colors.bg1, colors.bg2]}
-      style={styles.gradient}
-      start={[0, 0.5]}
-      end={[1, 0.5]}>
-      <View style={styles.help}>
-        <TouchableOpacity
-          onPress={handleLogin}>
-          <Text style={styles.helpText}>Help</Text>
-        </TouchableOpacity>
+  if(!isLoaded){
+    return null;
+  }
+  else{
+    return (
+      <View
+        style={styles.container}
+        behavior="padding"
+      >
+      <LinearGradient colors={[colors.bg1, colors.bg2]}
+        style={styles.gradient}
+        start={[0, 0.5]}
+        end={[1, 0.5]}>
+        <View style={styles.help}>
+          <TouchableOpacity
+            onPress={handleLogin}>
+            <Text style={{...styles.helpText,fontFamily:'Sublima-ExtraBold'}}>Help</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.inputContainer}>
+          <Image source={require("../images/logo.png")} style={styles.img} />
+          <Text style={styles.betweenText2}>Login</Text>
+          <TextInput
+            placeholder="Email:"
+            placeholderTextColor="#FFF"
+            value={email}
+            onChangeText = {text=> setEmail(text)}
+            style={{...styles.input,fontFamily:'Sublima-ExtraBold'}}
+          />
+          <TextInput
+            placeholder="Password:"
+            placeholderTextColor="#FFF"
+            value={password}
+            onChangeText = {text=> setPassword(text)}
+            style={{...styles.input,fontFamily:'Sublima-ExtraBold'}}
+            secureTextEntry
+          />
+          <TouchableOpacity
+            onPress={handleLogin}>
+            <Text style={{...styles.betweenText1,fontFamily:'Sublima-ExtraBold'}}>Forgot your password?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={[styles.button, styles.loginButton]}>
+            <Text style={[styles.buttonText, styles.loginButtonText, {fontFamily:'Sublima-ExtraBold'}]}>Start</Text>
+          </TouchableOpacity>
+          <Text style={{...styles.betweenText2, fontFamily:'Sublima-ExtraBold'}}>Sign in/up with</Text>
+          <TouchableOpacity
+            onPress={()=>onFacebookButtonPress()}
+            style={[styles.button, styles.loginFacebook]}>
+            <Text style={styles.buttonText}>Sign in with Facebook</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={()=>handleSignUpGoogle()}
+            style={[styles.button, styles.loginGoogle]}>
+            <Text style={styles.buttonText}>Sign in with Google</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={()=>onAppleButtonPress()}
+            style={[styles.button, styles.loginApple]}>
+            <Text style={styles.buttonText}>Sign in with Apple</Text>
+          </TouchableOpacity>
+        </View>
+        </LinearGradient>
       </View>
-      <View style={styles.inputContainer}>
-        <Image source={require("../images/logo.png")} style={styles.img} />
-        <Text style={styles.betweenText2}>Login</Text>
-        <TextInput
-          placeholder="Email:"
-          placeholderTextColor="#FFF"
-          value={email}
-          onChangeText = {text=> setEmail(text)}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Password:"
-          placeholderTextColor="#FFF"
-          value={password}
-          onChangeText = {text=> setPassword(text)}
-          style={styles.input}
-          secureTextEntry
-        />
-        <TouchableOpacity
-          onPress={handleLogin}>
-          <Text style={styles.betweenText1}>Forgot your password?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleLogin}
-          style={[styles.button, styles.loginButton]}>
-          <Text style={styles.buttonText, styles.loginButtonText}>Start</Text>
-        </TouchableOpacity>
-        <Text style={styles.betweenText2}>Sign in/up with</Text>
-        <TouchableOpacity
-          onPress={()=>onFacebookButtonPress()}
-          style={[styles.button, styles.loginFacebook]}>
-          <Text style={styles.buttonText}>Sign in with Facebook</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={()=>handleSignUpGoogle()}
-          style={[styles.button, styles.loginGoogle]}>
-          <Text style={styles.buttonText}>Sign in with Google</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={()=>onAppleButtonPress()}
-          style={[styles.button, styles.loginApple]}>
-          <Text style={styles.buttonText}>Sign in with Apple</Text>
-        </TouchableOpacity>
-      </View>
-      </LinearGradient>
-    </View>
-  )
+    )
+  }
 }
 
 export default Login
@@ -244,7 +256,6 @@ const styles = StyleSheet.create({
     color:'white',
     marginVertical:10,
     fontSize:15,
-    fontFamily:'Sublima_ExtraBold'
   },
   betweenText2:{
     color:colors.a2,
@@ -271,7 +282,7 @@ const styles = StyleSheet.create({
   loginButtonText:{
     color:colors.a2,
     fontSize:20,
-    fontWeight:'bold'
+    fontWeight:'bold',
   },
   loginFacebook:{
     backgroundColor:"#2638d8"

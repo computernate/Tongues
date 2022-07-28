@@ -6,11 +6,11 @@ Tongues is an app that provides social games for language learning. In this docu
 3. API references
 
 
-*******************************************************
+******************************************************
 
 Setup instructions
 
-*******************************************************
+******************************************************
 
 Code
 1. Open a terminal

@@ -14,6 +14,7 @@ const Stack = createNativeStackNavigator();
 /*
 Author: Nathan Roskelley
 This is the basic navigation for the app. Any page that doesn't have the "home navigation" on it should be here.
+//This is a test of the branch
 */
 export default function App() {
 

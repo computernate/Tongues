@@ -6,6 +6,7 @@ public class Word : IComparable{
     public int TimesUsed {get; set;} = 0;
     public DateTime LastUsed {get; set;} = new DateTime(0);
     public int score = 0;
+    public List<string> tags {get;set;}= new List<string>();
 
     public bool Equals(Word otherWord) =>
         (LastUsed == otherWord.LastUsed && Definition == otherWord.Definition);

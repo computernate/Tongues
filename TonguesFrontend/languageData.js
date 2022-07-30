@@ -1,14 +1,36 @@
 export const languageData = [
   {
     'name':'English',
-    'flagUrl':require('./images/flags/usa.jpg')
+    'flagUrl':require('./images/flags/usa.jpg'),
+    'tags':[
+      'verb',
+      'adjective',
+      'noun',
+      'irregular'
+    ]
   },
   {
     'name':'Spanish',
-    'flagUrl':require('./images/flags/spagna.jpg')
+    'flagUrl':require('./images/flags/spagna.jpg'),
+    'tags':[
+      'verb',
+      'adjective',
+      'noun',
+      'irregular',
+      'masculine',
+      'feminine'
+    ]
   },
   {
     'name':'French',
-    'flagUrl':require('./images/flags/france.png')
+    'flagUrl':require('./images/flags/france.png'),
+    'tags':[
+      'verb',
+      'adjective',
+      'noun',
+      'irregular',
+      'masculine',
+      'feminine'
+    ]
   }
 ]

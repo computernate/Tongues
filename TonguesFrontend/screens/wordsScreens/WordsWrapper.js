@@ -13,7 +13,7 @@ const WordsWrapper = (props) => {
   const renderSwitch = (tab) => {
     switch(tab){
       default:
-        return <Words user = {props.user} />
+        return <Words user = {props.user} language={props.learningLanguage.language} />
       }
   }
 

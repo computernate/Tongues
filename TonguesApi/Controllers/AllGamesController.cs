@@ -57,4 +57,11 @@ public class AllGamesController : ControllerBase
         return parent;
     }
 
+    [HttpGet("UserBucket/{id:length(24)}")]
+    public async Task<ActionResult<UserGameBucket>> GetBucket(string id){
+        UserGameBucket? bucket = await _gamesService.GetUserGameBucketAsync(id);
+        if (bucket is null) return NotFound();
+        return bucket;
+    }
+
 }

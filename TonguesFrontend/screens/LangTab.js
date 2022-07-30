@@ -59,7 +59,7 @@ const LangTab = (props) => {
       }}>
         <ScrollView style={styles.languageScroll}>
         {props.user.learningLanguages.map(function(data, index){
-            return (<TouchableOpacity onPress={()=>{props.switchLanguage(data);exit();}} style={styles.languageMenuItem}>
+            return (<TouchableOpacity onPress={()=>{props.switchLanguage(data);exit();}} style={styles.languageMenuItem} key={index}>
               <Image source={languageData[data.language].flagUrl} style={{width:150, height:100}} />
               <Text>{data.level}</Text>
             </TouchableOpacity>)

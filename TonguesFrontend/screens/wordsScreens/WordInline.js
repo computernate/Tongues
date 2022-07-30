@@ -8,6 +8,10 @@ const WordInline = (props) => {
     <View style={styles.text}><Text style={{paddingLeft:10}}>{props.data.term}</Text></View>
       <Text style={styles.text}>{props.data.definition}</Text>
       <Text style={styles.text}>{props.data.timesUsed} times</Text>
+        {props.data.tags.map(function(data, index){
+            return (
+              <Text>{data}</Text>)
+        })}
     </View>
   )
 }

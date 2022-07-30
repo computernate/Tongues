@@ -4,6 +4,8 @@ import {auth} from '../../firebase'
 import WordInline from './WordInline'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {config} from '../../config.js';
+import {languageData} from '../../languageData'
+import MultiSelect from 'react-native-multiple-select';
 
 class Words extends React.Component {
   constructor(props){
@@ -11,22 +13,29 @@ class Words extends React.Component {
     this.state = {
       word:'',
       translation:'',
+      selectedItems:[],
       loading:true,
       words:[],
       headBucket:"",
       nextBucket:"",
       message:""
     }
-    this.handleInputChange = this.handleInputChange.bind(this);
-    var headBucket = this.props.user.wordBuckets.filter(bucket => bucket.language2 == 1)[0].id;
-    this.setState({headBucket: headBucket});
-    this.setState({nextBucket: headBucket.nextBucketId});
-    this.getBucket(headBucket);
   }
 
-
+  componentDidMount() {
+    this.handleInputChange = this.handleInputChange.bind(this);
+    var lang = this.props.language
+    console.log("LANG: "+lang);
+    var headBucket = this.props.user.wordBuckets.filter(bucket => bucket.language2 == lang)[0].id;
+    console.log(headBucket);
+    this.setState({headBucket: headBucket});
+    this.setState({nextBucket: headBucket.nextBucketId});
+    console.log(this.state);
+    this.getBucket(headBucket);
+  }
   getBucket(id){
     if(id=="") return
+
     fetch(config.api_base_url + '/Words/'+id,{
       method: 'GET',
       headers: {
@@ -57,7 +66,6 @@ class Words extends React.Component {
 
   handleNewWord(){
     this.setState({loading:true});
-    console.log(this.state.headBucket);
     fetch(config.api_base_url + '/Words/'+this.state.headBucket,{
       method: 'POST',
       headers: {
@@ -66,7 +74,8 @@ class Words extends React.Component {
       },
       body:JSON.stringify({
         'Term': this.state.word,
-        'Definition': this.state.translation
+        'Definition': this.state.translation,
+        'Tags':this.state.selectedItems
       })
     })
     .then((response) => response.json())
@@ -87,8 +96,12 @@ class Words extends React.Component {
     });
   }
 
-  render(){
 
+  onSelectedItemsChange = tags => {
+    this.setState({ selectedItems:tags });
+  };
+
+  render(){
     return (
       <View style={styles.container}>
          <View style={styles.addWord}>
@@ -108,6 +121,32 @@ class Words extends React.Component {
               value = {this.state.translation}
               onChangeText = {newText => this.handleInputChange(newText, 'translation')} />
           </View>
+          <View style={styles.inputHolder}>
+           <MultiSelect
+              hideTags
+              items={languageData[this.props.language].tags.map((data) => {return {name:data}})}
+              uniqueKey="name"
+              ref={(component) => { this.multiSelect = component }}
+              onSelectedItemsChange={this.onSelectedItemsChange}
+              selectedItems={this.state.selectedItems}
+              selectText="Tags"
+              searchInputPlaceholderText="Search Tags..."
+              onChangeInput={ (text)=> console.log(text)}
+              tagRemoveIconColor="#CCC"
+              tagBorderColor="#CCC"
+              tagTextColor="#CCC"
+              selectedItemTextColor="#CCC"
+              selectedItemIconColor="#CCC"
+              itemTextColor="#000"
+              displayKey="name"
+              searchInputStyle={{ color: '#CCC' }}
+              submitButtonColor="#CCC"
+              submitButtonText="Enter"
+           />
+           <View>
+            {this.state.selectedItems.map((data) => {return (<Text>{data}</Text>)})}
+           </View>
+          </View>
            <View style={styles.inputHolder}>
              <TouchableOpacity
                onPress={()=>this.handleNewWord()}>
@@ -117,7 +156,7 @@ class Words extends React.Component {
          </View>
          {this.state.message!=""?(<Text>{this.state.message}</Text>):null}
          {this.state.loading ? <Text>LOADING</Text> : null}
-          <SafeAreaView style={styles.cardsHolder}>
+          <View style={styles.cardsHolder}>
             <FlatList
               data={this.state.words}
               listEmptyComponent={(<Text>You have no words! Add one below</Text>)}
@@ -129,7 +168,7 @@ class Words extends React.Component {
               onEndReached={()=>this.getBucket(this.state.nextBucket)}
               onEndThreshold={0}
             />
-          </SafeAreaView>
+          </View>
       </View>
     )
   }
